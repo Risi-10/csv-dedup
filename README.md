@@ -20,6 +20,9 @@ Status: **prototype.** See [CLAUDE.md](CLAUDE.md) for the project brief and mile
 
 Rows to check are still in the clean list. Nothing is ever dropped, except fully empty rows.
 
+The page follows the computer's light/dark setting. The button in the top-right corner switches it,
+and the browser remembers the choice.
+
 ## Setup
 
 Requires [Node.js](https://nodejs.org/) 20 or newer, for building and tests only. There are no npm dependencies.

@@ -5,12 +5,24 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Newsletter List Cleaner</title>
   <link rel="stylesheet" href="styles.css">
+  <script>
+    // Pick the theme before the page draws, so it doesn't flash the wrong colours.
+    (function () {
+      let saved = null;
+      try { saved = localStorage.getItem('theme'); } catch (error) { /* storage blocked: follow the computer */ }
+      const dark = saved ? saved === 'dark' : window.matchMedia('(prefers-color-scheme: dark)').matches;
+      document.documentElement.dataset.theme = dark ? 'dark' : 'light';
+    })();
+  </script>
 </head>
 <body>
   <main>
-    <header>
-      <h1>Newsletter List Cleaner</h1>
-      <p class="lead">Drop Monday's customer export here to get a clean list back. Your file never leaves this computer.</p>
+    <header class="page-header">
+      <div>
+        <h1>Newsletter List Cleaner</h1>
+        <p class="lead">Drop Monday's customer export here to get a clean list back. Your file never leaves this computer.</p>
+      </div>
+      <button id="theme-toggle" class="theme-toggle" type="button"></button>
     </header>
 
     <label id="drop-zone" class="drop-zone" for="file-input">
