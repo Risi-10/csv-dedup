@@ -1,0 +1,27 @@
+# Customer data: never commit real exports or cleaned lists.
+# Put anonymized/fake test files in samples/ instead.
+*.csv
+*.xlsx
+*.xls
+!samples/**
+
+# Secrets
+.env
+.env.*
+!.env.example
+
+# Claude Code local settings
+.claude/settings.local.json
+
+# OS / editor
+Thumbs.db
+desktop.ini
+.DS_Store
+.vscode/
+.idea/
+
+# Dependencies and build output
+node_modules/
+dist/
+__pycache__/
+.venv/
