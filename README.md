@@ -1,28 +1,61 @@
 # Newsletter List Cleaner
 
-A tool that cleans the weekly customer export before the newsletter goes out. Drop in Monday's
-export and get back a clean list:
+A single offline web page that cleans the weekly customer export before the newsletter goes out.
+Drop in Monday's export and get back a clean list:
 
 - Names in normal capitals (`ANNA MÜLLER` → `Anna Müller`)
 - Phone numbers in one standard format (`555 010 0000` → `+15550100000`)
-- Duplicate customers merged, with uncertain matches flagged for review instead of deleted
+- Duplicate customers merged, with uncertain cases flagged for review instead of deleted
 
-Status: **not started.** See [CLAUDE.md](CLAUDE.md) for the project brief, approach and milestones.
+The data never leaves the computer: everything runs in the browser, with no internet needed.
+
+Status: **prototype.** See [CLAUDE.md](CLAUDE.md) for the project brief and milestones.
+
+## Using it
+
+1. Open `list-cleaner.html` in any browser (double-click it).
+2. Drag the export (`.csv` or `.xlsx`) onto the page, or click to choose it.
+3. Read the summary line, e.g. `14 rows → 9 · 4 duplicates merged · 1 empty row removed · 6 rows to check`.
+4. Download the clean list (Excel, or CSV for the newsletter tool) and, if there are any, the rows to check.
+
+Rows to check are still in the clean list. Nothing is ever dropped, except fully empty rows.
 
 ## Setup
 
-TBD. The planned approach is a single offline web page: no install, and the data never leaves
-the user's computer.
+Requires [Node.js](https://nodejs.org/) 20 or newer, for building and tests only. There are no npm dependencies.
 
-## Usage
+```sh
+npm run build   # writes dist/list-cleaner.html, the single file to hand over
+npm test        # unit tests + end-to-end test on samples/
+```
 
-TBD.
+During development you can also open `src/index.html` directly; it loads the same scripts unbundled.
 
-## Tests
+## How it works
 
-TBD.
+| File | Job |
+|---|---|
+| `src/parse.js` | Reads CSV (detects UTF-8 vs Windows-1252 and `,` / `;` / tab) and Excel files |
+| `src/columns.js` | Finds the name, phone, email and customer ID columns by header name |
+| `src/names.js` | Fixes capitals word by word; leaves already mixed-case words like `McDonald` alone |
+| `src/phones.js` | Converts phones to `+<country><number>`; default country code is `1` (`DEFAULT_COUNTRY_CODE`) |
+| `src/dedupe.js` | Groups duplicates, merges them and builds the "rows to check" list and summary |
+| `src/app.js` | Page wiring: drop zone, previews, downloads |
+| `vendor/xlsx.full.min.js` | [SheetJS](https://sheetjs.com/) Community Edition **0.20.3**, from `cdn.sheetjs.com` (the npm registry copy is outdated) |
+
+**Duplicate rules**
+
+- **Merged** when two rows have the same customer ID, or the same email or phone with names that
+  match allowing one typo per word (`Jonh Smith` = `John Smith`, word order ignored).
+- **Flagged, not merged**: different names sharing a phone or email, the same name with different
+  contact details, and missing or unreadable phone numbers.
+- When merging, the most complete row wins, gaps are filled from the other copies, and the name
+  spelling most copies agree on is kept. If merged copies had different phones or emails, the row is flagged.
+
+**Downloads**: the Excel file stores every cell as text, so phone numbers keep their `+`. The CSV
+uses the same separator as the input and starts with a UTF-8 BOM so Excel shows accents correctly.
 
 ## Data protection
 
 Never commit real customer exports. `.gitignore` blocks `.csv` and `.xlsx` files everywhere except
-`samples/`, which is for anonymized or made-up test data only.
+`samples/`, which is for made-up test data only.

@@ -6,8 +6,8 @@
 | **Contact** | Arben ([email — TBD]) |
 | **User** | Elira |
 | **Created** | 2026-11-18 |
-| **Status** | Not started |
-| **Tech stack** | Offline web page (recommended, to confirm) — see [section 8](#8-tech-stack) |
+| **Status** | Prototype built (demo data) |
+| **Tech stack** | Offline web page (decided 2026-11-19), see [section 8](#8-tech-stack) |
 
 ---
 
@@ -106,7 +106,8 @@ Since the export always comes from the same old system, the tool can be built ar
 Backup option: a small Python script packaged as a program she drags files onto. Only worth it if the
 exports are very large (hundreds of thousands of rows).
 
-**Decision:** [TBD after discovery]
+**Decision (2026-11-19):** single offline web page. Plain JS, no framework, SheetJS vendored in
+`vendor/`; `npm run build` inlines everything into `dist/list-cleaner.html`. See README for layout.
 
 ## 9. Milestones
 
