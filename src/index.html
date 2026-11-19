@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Newsletter List Cleaner</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <main>
+    <header>
+      <h1>Newsletter List Cleaner</h1>
+      <p class="lead">Drop Monday's customer export here to get a clean list back. Your file never leaves this computer.</p>
+    </header>
+
+    <label id="drop-zone" class="drop-zone" for="file-input">
+      <input id="file-input" type="file" accept=".csv,.txt,.xlsx,.xlsm,.xls" hidden>
+      <span class="drop-title">Drag the export here</span>
+      <span class="drop-hint">or click to choose a file (.csv or .xlsx)</span>
+    </label>
+
+    <p id="error" class="error" role="alert" hidden></p>
+
+    <section id="result" hidden>
+      <p id="summary" class="summary" aria-live="polite"></p>
+
+      <div class="actions">
+        <button id="download-clean-xlsx" class="primary" type="button">Download clean list (Excel)</button>
+        <button id="download-clean-csv" type="button">Download clean list (CSV)</button>
+        <button id="download-check" type="button">Download rows to check</button>
+      </div>
+      <p class="note">Open the Excel version to look at the list. Use the CSV version if your newsletter tool asks for CSV.</p>
+
+      <div id="check-section">
+        <h2>Rows to check</h2>
+        <p class="note">These customers are still in the clean list. Look them over in case something needs fixing by hand.</p>
+        <div class="table-wrap"><table id="check-table"></table></div>
+      </div>
+
+      <h2>Clean list <span id="preview-note" class="muted"></span></h2>
+      <div class="table-wrap"><table id="clean-table"></table></div>
+    </section>
+  </main>
+
+  <script src="../vendor/xlsx.full.min.js"></script>
+  <script src="names.js"></script>
+  <script src="phones.js"></script>
+  <script src="columns.js"></script>
+  <script src="parse.js"></script>
+  <script src="dedupe.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
