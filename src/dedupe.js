@@ -115,30 +115,25 @@
     const uf = createUnionFind(records.length);
     const position = new Map(records.map((r, i) => [r, i]));
     const pos = (r) => position.get(r);
-    const conflicts = [];
+    const conflicts = []; // [group, text]: rows that share something but may be different people
 
     for (const group of groupBy(records, 'id')) {
       group.forEach((r) => uf.union(pos(group[0]), pos(r)));
     }
 
-    for (const [key, label] of [['email', 'email'], ['phone', 'phone']]) {
+    for (const key of ['email', 'phone']) {
       for (const group of groupBy(records, key)) {
         for (let i = 0; i < group.length; i++) {
           for (let j = i + 1; j < group.length; j++) {
-            const [a, b] = [group[i], group[j]];
-            if (namesClose(a.name, b.name)) uf.union(pos(a), pos(b));
-            else conflicts.push([a, b, `shares ${label} ${a[key]} with`]);
+            if (namesClose(group[i].name, group[j].name)) uf.union(pos(group[i]), pos(group[j]));
           }
         }
+        conflicts.push([group, `shares ${key} ${group[0][key]} with`]);
       }
     }
 
     for (const group of groupBy(records, 'name')) {
-      for (let i = 0; i < group.length; i++) {
-        for (let j = i + 1; j < group.length; j++) {
-          conflicts.push([group[i], group[j], 'same name, different phone/email, as']);
-        }
-      }
+      conflicts.push([group, 'same name, different phone/email, as']);
     }
 
     const groups = new Map();
@@ -148,14 +143,35 @@
       groups.get(rootIndex).push(record);
     });
 
-    // A conflict only matters if the two rows ended up as separate customers.
-    for (const [a, b, text] of conflicts) {
-      if (uf.find(pos(a)) === uf.find(pos(b))) continue;
-      a.flags.push(`${text} ${describe(b)}`);
-      b.flags.push(`${text} ${describe(a)}`);
-    }
+    // Only rows that ended up as separate customers need checking.
+    for (const [group, text] of conflicts) flagSeparateCustomers(group, text, (r) => uf.find(pos(r)));
 
     return [...groups.values()];
+  }
+
+  const MAX_ROWS_LISTED = 3;
+
+  // One flag per row naming a few of the other customers, rather than one flag per pair:
+  // a common name shared by hundreds of rows would otherwise make the list unreadable
+  // and run the browser out of memory.
+  function flagSeparateCustomers(group, text, customerOf) {
+    const firstRowOfCustomer = new Map();
+    for (const record of group) {
+      if (!firstRowOfCustomer.has(customerOf(record))) firstRowOfCustomer.set(customerOf(record), record);
+    }
+    if (firstRowOfCustomer.size < 2) return;
+
+    for (const record of group) {
+      const others = [];
+      for (const [customer, first] of firstRowOfCustomer) {
+        if (customer === customerOf(record)) continue;
+        others.push(first);
+        if (others.length > MAX_ROWS_LISTED) break;
+      }
+      const listed = others.slice(0, MAX_ROWS_LISTED).map(describe).join(', ');
+      const moreCount = firstRowOfCustomer.size - 1 - MAX_ROWS_LISTED;
+      record.flags.push(`${text} ${listed}${moreCount > 0 ? ` and ${moreCount} more` : ''}`);
+    }
   }
 
   function countFilled(record) {
