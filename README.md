@@ -14,11 +14,14 @@ Status: **prototype.** See [CLAUDE.md](CLAUDE.md) for the project brief and mile
 ## Using it
 
 1. Open `list-cleaner.html` in any browser (double-click it).
-2. Drag the export (`.csv` or `.xlsx`) onto the page, or click to choose it.
+2. Drag the export (`.csv` or `.xlsx`) onto the page, or click to choose it. To combine several exports,
+   drop or choose them together: they are cleaned as one list, so a customer in two files appears once.
 3. Read the summary line, e.g. `14 rows → 9 · 4 duplicates merged · 1 empty row removed · 6 rows to check`.
 4. Download the clean list (Excel, or CSV for the newsletter tool) and, if there are any, the rows to check.
 
-Rows to check are still in the clean list. Nothing is ever dropped, except fully empty rows.
+Rows to check are still in the clean list. Nothing is ever dropped, except fully empty rows and header
+rows repeated partway down a file. Row numbers in "rows to check" are the rows as Excel shows them, with
+the file name in front when several files were combined (`monday.csv row 7`).
 
 ## Setup
 
@@ -37,6 +40,7 @@ During development you can also open `src/index.html` directly; it loads the sam
 |---|---|
 | `src/parse.js` | Reads CSV (detects UTF-8 vs Windows-1252 and `,` / `;` / tab) and Excel files |
 | `src/columns.js` | Finds the name, phone, email and customer ID columns by header name |
+| `src/combine.js` | Joins several files into one table, lining up columns by role or header, and remembers each row's file and row number |
 | `src/names.js` | Fixes capitals word by word; leaves already mixed-case words like `McDonald` alone |
 | `src/phones.js` | Converts phones to `+<country><number>`; default country code is `355`, Albania (`DEFAULT_COUNTRY_CODE`). Albanian and Kosovo numbers with a digit missing or extra are flagged |
 | `src/dedupe.js` | Groups duplicates, merges them and builds the "rows to check" list and summary |

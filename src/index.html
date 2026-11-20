@@ -10,14 +10,19 @@
   <main>
     <header>
       <h1>Newsletter List Cleaner</h1>
-      <p class="lead">Drop Monday's customer export here to get a clean list back. Your file never leaves this computer.</p>
+      <p class="lead">Drop Monday's customer export here to get a clean list back. Your files never leave this computer.</p>
     </header>
 
     <label id="drop-zone" class="drop-zone" for="file-input">
-      <input id="file-input" type="file" accept=".csv,.txt,.xlsx,.xlsm,.xls" hidden>
-      <span class="drop-title">Drag the export here</span>
-      <span class="drop-hint">or click to choose a file (.csv or .xlsx)</span>
+      <input id="file-input" type="file" accept=".csv,.txt,.xlsx,.xlsm,.xls" multiple hidden>
+      <span id="drop-title" class="drop-title">Drag the export here</span>
+      <span class="drop-hint">or click to choose files (.csv or .xlsx). Add more files at any time to combine them into one list.</span>
     </label>
+
+    <section id="files" class="files" hidden>
+      <ul id="file-list" class="file-list"></ul>
+      <button id="start-over" type="button">Start over</button>
+    </section>
 
     <p id="error" class="error" role="alert" hidden></p>
 
@@ -46,6 +51,7 @@
   <script src="names.js"></script>
   <script src="phones.js"></script>
   <script src="columns.js"></script>
+  <script src="combine.js"></script>
   <script src="parse.js"></script>
   <script src="dedupe.js"></script>
   <script src="app.js"></script>

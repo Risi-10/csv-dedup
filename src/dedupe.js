@@ -6,8 +6,9 @@
     : root.Cleaner;
   const { fixName, nameKey, normalizePhone, detectColumns } = deps;
 
-  // The header is row 1 in Excel, so data row i is row i + 2. Elira uses these to find rows.
-  const toSheetRow = (index) => index + 2;
+  // Where a row came from, as Elira would look it up in Excel: "row 7", or "a.csv row 7"
+  // when several files were combined.
+  const rowLabel = ({ file, row }) => (file ? `${file} row ${row}` : `row ${row}`);
 
   // Optimal string alignment distance: insertions, deletions, substitutions and swaps of
   // two neighbouring letters ("Jonh" -> "John" is 1).
@@ -58,7 +59,7 @@
     return row.every((cell) => String(cell ?? '').trim() === '');
   }
 
-  function cleanRecord(row, index, columns, countryCode) {
+  function cleanRecord(row, source, columns, countryCode) {
     const cells = row.map((cell) => String(cell ?? '').trim());
     const flags = [];
     for (const role of ['name', 'firstName', 'lastName']) {
@@ -84,7 +85,7 @@
       : [cells[columns.firstName], cells[columns.lastName]].filter(Boolean).join(' ');
 
     return {
-      index,
+      source,
       cells,
       flags,
       id: columns.id !== null ? cells[columns.id] : '',
@@ -106,7 +107,7 @@
   }
 
   function describe(record) {
-    return `row ${toSheetRow(record.index)} (${record.displayName || 'no name'})`;
+    return `${rowLabel(record.source)} (${record.displayName || 'no name'})`;
   }
 
   // Sure matches are merged; near-misses are only flagged, so no real customer is lost.
@@ -194,7 +195,9 @@
       if (values.length > 1) flags.push(`merged rows had different ${role}s: ${values.join(', ')} (kept ${cells[columns[role]]})`);
     }
 
-    return { cells, flags, rows: members.map((r) => toSheetRow(r.index)) };
+    // Plain row numbers for a single file ("2, 3"); with several files each needs its file name.
+    const rows = members.map(({ source }) => (source.file ? rowLabel(source) : source.row));
+    return { cells, flags, rows };
   }
 
   function formatSummary(s) {
@@ -207,13 +210,15 @@
 
   // header: array of column names; rows: arrays of cell values (without the header).
   // options.countryCode: for phones written without one (defaults to DEFAULT_COUNTRY_CODE).
-  function cleanList(header, rows, { countryCode } = {}) {
+  // options.sources: { file, row } for each row, from combineFiles; defaults to rows 2, 3, …
+  function cleanList(header, rows, { countryCode, sources } = {}) {
     const columns = detectColumns(header);
     const width = header.length;
+    const sourceOf = (index) => (sources ? sources[index] : { file: '', row: index + 2 });
     const records = rows
-      .map((row, index) => ({ row, index }))
+      .map((row, index) => ({ row, source: sourceOf(index) }))
       .filter(({ row }) => !isBlankRow(row))
-      .map(({ row, index }) => cleanRecord(Array.from({ length: width }, (_, c) => row[c]), index, columns, countryCode));
+      .map(({ row, source }) => cleanRecord(Array.from({ length: width }, (_, c) => row[c]), source, columns, countryCode));
 
     const customers = findGroups(records).map((members) => mergeGroup(members, columns));
     const clean = customers.map((c) => c.cells);
