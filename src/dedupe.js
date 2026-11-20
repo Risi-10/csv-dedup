@@ -30,10 +30,17 @@
   // A blank name is treated as matching, since the shared phone/email already ties the rows.
   function namesClose(a, b) {
     if (!a || !b || a === b) return true;
-    const wordsA = a.split(' ').sort();
-    const wordsB = b.split(' ').sort();
-    if (wordsA.length !== wordsB.length) return false;
-    return wordsA.every((word, i) => editDistance(word, wordsB[i]) <= 1);
+    // Pair each word with any unused word of the other name, rather than sorting both lists,
+    // because a typo in a first letter ("Kela"/"Cela") changes where a word sorts.
+    const unmatched = b.split(' ');
+    const wordsA = a.split(' ');
+    if (wordsA.length !== unmatched.length) return false;
+    for (const word of wordsA) {
+      const i = unmatched.findIndex((other) => editDistance(word, other) <= 1);
+      if (i === -1) return false;
+      unmatched.splice(i, 1);
+    }
+    return true;
   }
 
   function createUnionFind(size) {
@@ -51,7 +58,7 @@
     return row.every((cell) => String(cell ?? '').trim() === '');
   }
 
-  function cleanRecord(row, index, columns) {
+  function cleanRecord(row, index, columns, countryCode) {
     const cells = row.map((cell) => String(cell ?? '').trim());
     const flags = [];
     for (const role of ['name', 'firstName', 'lastName']) {
@@ -60,7 +67,7 @@
 
     let phone = '';
     if (columns.phone !== null) {
-      const result = normalizePhone(cells[columns.phone]);
+      const result = normalizePhone(cells[columns.phone], countryCode);
       cells[columns.phone] = result.value;
       if (result.ok) phone = result.value;
       else flags.push(result.reason);
@@ -199,13 +206,14 @@
   }
 
   // header: array of column names; rows: arrays of cell values (without the header).
-  function cleanList(header, rows) {
+  // options.countryCode: for phones written without one (defaults to DEFAULT_COUNTRY_CODE).
+  function cleanList(header, rows, { countryCode } = {}) {
     const columns = detectColumns(header);
     const width = header.length;
     const records = rows
       .map((row, index) => ({ row, index }))
       .filter(({ row }) => !isBlankRow(row))
-      .map(({ row, index }) => cleanRecord(Array.from({ length: width }, (_, c) => row[c]), index, columns));
+      .map(({ row, index }) => cleanRecord(Array.from({ length: width }, (_, c) => row[c]), index, columns, countryCode));
 
     const customers = findGroups(records).map((members) => mergeGroup(members, columns));
     const clean = customers.map((c) => c.cells);

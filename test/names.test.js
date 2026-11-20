@@ -33,3 +33,10 @@ test('handles empty values', () => {
 test('nameKey ignores case and spacing', () => {
   assert.equal(nameKey('JOHN  SMITH'), nameKey('John Smith'));
 });
+
+test('nameKey ignores leading titles, dots and accents', () => {
+  assert.equal(nameKey('DR. AGIM LEKA'), 'agim leka');
+  assert.equal(nameKey('Znj. Elira Çela'), 'elira cela');
+  assert.equal(nameKey('Jetmir Ç. Dervishi'), 'jetmir c dervishi');
+  assert.equal(nameKey('Dr'), 'dr', 'a title alone is kept, so the name is not blank');
+});
