@@ -23,6 +23,9 @@ Rows to check are still in the clean list. Nothing is ever dropped, except fully
 rows repeated partway down a file. Row numbers in "rows to check" are the rows as Excel shows them, with
 the file name in front when several files were combined (`monday.csv row 7`).
 
+The page follows the computer's light/dark setting. The button in the top-right corner switches it,
+and the browser remembers the choice.
+
 ## Setup
 
 Requires [Node.js](https://nodejs.org/) 20 or newer, for building and tests only. There are no npm dependencies.
