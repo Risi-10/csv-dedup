@@ -6,6 +6,8 @@ const { cleanList, namesClose } = require('../src/dedupe.js');
 const { readFile, toCsv } = require('../src/parse.js');
 
 const header = ['Name', 'Phone', 'Email'];
+// These examples use the US numbers from the project brief.
+const cleanUs = (h, rows) => cleanList(h, rows, { countryCode: '1' });
 
 test('namesClose allows one typo per word and any word order', () => {
   assert.ok(namesClose('jonh smith', 'john smith'));
@@ -15,7 +17,7 @@ test('namesClose allows one typo per word and any word order', () => {
 });
 
 test('merges rows with the same phone and a typo in the name', () => {
-  const result = cleanList(header, [
+  const result = cleanUs(header, [
     ['JOHN SMITH', '555-010-0001', ''],
     ['Jonh Smith', '5550100001', 'john@example.com'],
   ]);
@@ -25,7 +27,7 @@ test('merges rows with the same phone and a typo in the name', () => {
 });
 
 test('merges by email, ignoring case', () => {
-  const result = cleanList(header, [
+  const result = cleanUs(header, [
     ['Ann Lee', '', 'ANN@example.com'],
     ['ann lee', '555 010 0007', 'ann@example.com'],
   ]);
@@ -34,7 +36,7 @@ test('merges by email, ignoring case', () => {
 });
 
 test('merges by customer ID even when names differ', () => {
-  const result = cleanList(['Customer ID', ...header], [
+  const result = cleanUs(['Customer ID', ...header], [
     ['42', 'Robert Brown', '555 010 0005', ''],
     ['42', 'Bob Brown', '', 'bob@example.com'],
   ]);
@@ -42,7 +44,7 @@ test('merges by customer ID even when names differ', () => {
 });
 
 test('never merges different names sharing a phone; flags both instead', () => {
-  const result = cleanList(header, [
+  const result = cleanUs(header, [
     ['PETER OBRIEN', '555 010 0003', ''],
     ['MARY OBRIEN', '555 010 0003', ''],
   ]);
@@ -52,7 +54,7 @@ test('never merges different names sharing a phone; flags both instead', () => {
 });
 
 test('flags merged rows whose phones disagreed', () => {
-  const result = cleanList(header, [
+  const result = cleanUs(header, [
     ['Maria Garcia', '555 010 0002', 'maria@example.com'],
     ['Maria Garcia', '555 010 0099', 'maria@example.com'],
   ]);
@@ -62,7 +64,7 @@ test('flags merged rows whose phones disagreed', () => {
 });
 
 test('works with separate first and last name columns', () => {
-  const result = cleanList(['First Name', 'Last Name', 'Phone'], [
+  const result = cleanUs(['First Name', 'Last Name', 'Phone'], [
     ['ANNA', 'MÜLLER', '5550100000'],
     ['Anna', 'Muller', '555 010 0000'],
   ]);
@@ -73,10 +75,39 @@ test('cleans the sample export to match the expected file', () => {
   const samples = path.join(__dirname, '..', 'samples');
   const input = fs.readFileSync(path.join(samples, 'messy-export.csv'));
   const { header: inputHeader, rows, separator } = readFile(input, 'messy-export.csv');
-  const result = cleanList(inputHeader, rows);
+  const result = cleanUs(inputHeader, rows);
 
   const expected = fs.readFileSync(path.join(samples, 'expected-clean.csv'), 'utf8');
   const normalize = (text) => text.replace(/\r\n/g, '\n').trim();
   assert.equal(normalize(toCsv([result.header, ...result.clean], separator)), normalize(expected));
   assert.equal(result.summary.text, '14 rows → 9 · 4 duplicates merged · 1 empty row removed · 6 rows to check');
+});
+
+test('namesClose survives a typo that changes how words sort', () => {
+  assert.ok(namesClose('elira kela', 'cela elira'));
+});
+
+test('merges Albanian rows with titles, swapped name order and missing accents', () => {
+  const result = cleanList(['ID', 'EMRI', 'TELEFONI', 'EMAIL'], [
+    ['17', 'DR. AGIM LEKA', '04 2234 568', 'agim.leka@example.com'],
+    ['18', 'LEKA AGIM', '042234568', 'agim.leka@example.com'],
+    ['3', 'ELIRA ÇELA', '069 22 33 445', 'elira.cela@example.com'],
+    ['4', 'Elira Cela', '0692233445', 'elira.cela@example.com'],
+    ['1', 'ARBEN HOXHA', '0691234567', ''],
+    ['2', 'arben hoxha', '+355 69 123 4567', ''],
+  ]);
+  assert.deepEqual(result.clean, [
+    ['17', 'Dr. Agim Leka', '+35542234568', 'agim.leka@example.com'],
+    ['3', 'Elira Çela', '+355692233445', 'elira.cela@example.com'],
+    ['1', 'Arben Hoxha', '+355691234567', ''],
+  ]);
+  assert.equal(result.check.length, 0);
+});
+
+test('a name shared by many customers gives each row one short flag, not one per pair', () => {
+  const rows = Array.from({ length: 200 }, (_, i) => ['Arben Hoxha', '', `arben${i}@example.com`]);
+  const result = cleanList(header, rows);
+  assert.equal(result.clean.length, 200);
+  assert.equal(result.check[0][1], 'phone missing; same name, different phone/email, as '
+    + 'row 3 (Arben Hoxha), row 4 (Arben Hoxha), row 5 (Arben Hoxha) and 196 more');
 });

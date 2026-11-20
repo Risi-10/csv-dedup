@@ -4,16 +4,24 @@
   // Header names are compared after lowercasing and removing everything but letters/digits,
   // so "E-Mail", "e_mail" and "Email " all become "email".
   const COLUMN_NAMES = {
-    id: ['customerid', 'custid', 'clientid', 'customerno', 'customernumber', 'customernr', 'id', 'kundennummer', 'kundenid'],
-    email: ['email', 'emailaddress', 'mail', 'emailadresse'],
-    phone: ['phone', 'phonenumber', 'telephone', 'tel', 'mobile', 'mobilephone', 'cell', 'telefon', 'handy'],
-    firstName: ['firstname', 'first', 'givenname', 'forename', 'vorname'],
-    lastName: ['lastname', 'last', 'surname', 'familyname', 'nachname'],
-    name: ['name', 'fullname', 'customername', 'customer', 'kunde', 'kundenname'],
+    id: ['customerid', 'custid', 'clientid', 'customerno', 'customernumber', 'customernr', 'id', 'kundennummer', 'kundenid', 'idklienti', 'kodiklienti'],
+    email: ['email', 'emailaddress', 'mail', 'emailadresse', 'emaili', 'postaelektronike'],
+    phone: ['phone', 'phonenumber', 'telephone', 'tel', 'mobile', 'mobilephone', 'cell', 'telefon', 'handy', 'telefoni', 'nrtelefoni', 'numritelefonit', 'celulari'],
+    firstName: ['firstname', 'first', 'givenname', 'forename', 'vorname', 'emri'],
+    lastName: ['lastname', 'last', 'surname', 'familyname', 'nachname', 'mbiemri'],
+    name: ['name', 'fullname', 'customername', 'customer', 'kunde', 'kundenname', 'emri', 'emriplotë', 'emriplote', 'emrimbiemri', 'emridhembiemri', 'klienti'],
   };
 
   function normalizeHeader(header) {
     return String(header ?? '').toLowerCase().replace(/[^\p{L}\p{N}]/gu, '');
+  }
+
+  // Some headers mean "full name" on their own but "first name" next to a surname column
+  // (Albanian "Emri" alongside "Mbiemri"), so they are listed under both roles.
+  function resolveSharedNameColumn(columns) {
+    if (columns.name === null || columns.name !== columns.firstName) return;
+    if (columns.lastName !== null) columns.name = null;
+    else columns.firstName = null;
   }
 
   function detectColumns(headers) {
@@ -23,6 +31,7 @@
       const index = normalized.findIndex((h) => names.includes(h));
       columns[role] = index === -1 ? null : index;
     }
+    resolveSharedNameColumn(columns);
 
     const hasName = columns.name !== null || (columns.firstName !== null && columns.lastName !== null);
     const hasContact = columns.phone !== null || columns.email !== null || columns.id !== null;

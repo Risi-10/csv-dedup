@@ -46,3 +46,9 @@ test('rejects other file types and empty files', () => {
   assert.throws(() => readFile(new ArrayBuffer(0), 'list.pdf', XLSX), /\.csv or \.xlsx/);
   assert.throws(() => readFile(new TextEncoder().encode('Name;Phone\n;\n').buffer, 'list.csv', XLSX), /no customer rows/);
 });
+
+test('drops header rows repeated partway down the file', () => {
+  const csv = 'ID,EMRI,TELEFONI\n1,Ana,0691234567\nID,EMRI,TELEFONI\n2,Ben,0697654321\n';
+  const { rows } = readFile(new TextEncoder().encode(csv).buffer, 'export.csv');
+  assert.deepEqual(rows.map((row) => row[0]), ['1', '2']);
+});
