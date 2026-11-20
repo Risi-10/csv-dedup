@@ -95,14 +95,21 @@
     table = dropTrailingEmptyRows(table);
     if (table.length < 2) throw new Error('The file has no customer rows.');
     const header = table[0].map((h) => String(h ?? '').trim());
-    return { header, rows: dropRepeatedHeaders(table.slice(1), header), separator };
+    // Row numbers as Excel shows them (header is row 1), kept so dropped rows don't shift them.
+    const numbered = dropRepeatedHeaders(table.slice(1).map((row, i) => ({ row, number: i + 2 })), header);
+    return {
+      header,
+      rows: numbered.map(({ row }) => row),
+      rowNumbers: numbered.map(({ number }) => number),
+      separator,
+    };
   }
 
   // Exports glued together from several pages repeat the header row partway down.
-  function dropRepeatedHeaders(rows, header) {
+  function dropRepeatedHeaders(numberedRows, header) {
     const key = (row) => row.map((cell) => String(cell ?? '').trim().toLowerCase()).join('\u0000');
     const headerKey = key(header);
-    return rows.filter((row) => key(row) !== headerKey);
+    return numberedRows.filter(({ row }) => key(row) !== headerKey);
   }
 
   const api = { decodeBytes, detectSeparator, parseCsv, toCsv, readFile };

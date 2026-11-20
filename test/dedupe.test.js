@@ -103,3 +103,11 @@ test('merges Albanian rows with titles, swapped name order and missing accents',
   ]);
   assert.equal(result.check.length, 0);
 });
+
+test('a name shared by many customers gives each row one short flag, not one per pair', () => {
+  const rows = Array.from({ length: 200 }, (_, i) => ['Arben Hoxha', '', `arben${i}@example.com`]);
+  const result = cleanList(header, rows);
+  assert.equal(result.clean.length, 200);
+  assert.equal(result.check[0][1], 'phone missing; same name, different phone/email, as '
+    + 'row 3 (Arben Hoxha), row 4 (Arben Hoxha), row 5 (Arben Hoxha) and 196 more');
+});

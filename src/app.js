@@ -1,16 +1,17 @@
 (function () {
   'use strict';
 
-  const { readFile, cleanList, toCsv } = window.Cleaner;
+  const { readFile, combineFiles, cleanList, toCsv } = window.Cleaner;
   const PREVIEW_ROWS = 50;
   const $ = (id) => document.getElementById(id);
 
   let current = null; // { result, separator, baseName }
+  let loaded = []; // files read so far, in the order they were added: readFile output plus name
+  let queue = Promise.resolve(); // handles drops one after another, so quick drops keep their order
 
   function showError(message) {
     $('error').textContent = message;
     $('error').hidden = false;
-    $('result').hidden = true;
   }
 
   function renderTable(table, header, rows) {
@@ -28,8 +29,28 @@
     }
   }
 
+  function renderFileList() {
+    const list = $('file-list');
+    list.replaceChildren();
+    for (const file of loaded) {
+      const item = document.createElement('li');
+      const name = document.createElement('span');
+      name.textContent = `${file.name} (${file.rows.length.toLocaleString('en-US')} rows)`;
+      const remove = Object.assign(document.createElement('button'), { type: 'button', textContent: 'Remove' });
+      remove.addEventListener('click', () => {
+        loaded = loaded.filter((other) => other !== file);
+        rebuild();
+      });
+      item.append(name, remove);
+      list.appendChild(item);
+    }
+    $('files').hidden = loaded.length === 0;
+    $('drop-title').textContent = loaded.length ? 'Drag another export here to add it' : 'Drag the export here';
+  }
+
   function render(result) {
-    $('summary').textContent = result.summary.text;
+    const filesNote = loaded.length > 1 ? `${loaded.length} files combined · ` : '';
+    $('summary').textContent = filesNote + result.summary.text;
     $('check-section').hidden = result.check.length === 0;
     $('download-check').hidden = result.check.length === 0;
     renderTable($('check-table'), result.checkHeader, result.check);
@@ -37,21 +58,64 @@
     $('preview-note').textContent = result.clean.length > PREVIEW_ROWS
       ? `(first ${PREVIEW_ROWS} of ${result.clean.length.toLocaleString('en-US')})`
       : '';
-    $('error').hidden = true;
     $('result').hidden = false;
   }
 
-  async function handleFile(file) {
-    if (!file) return;
+  // All loaded files are cleaned as one list, so a customer in two exports ends up in it once.
+  function rebuild() {
+    renderFileList();
+    $('error').hidden = true;
+    if (loaded.length === 0) {
+      current = null;
+      $('result').hidden = true;
+      return;
+    }
+    const { header, rows, sources } = combineFiles(loaded);
+    const result = cleanList(header, rows, { sources });
+    const baseName = loaded.length === 1 ? loaded[0].name.replace(/\.[^.]+$/, '') : 'combined-list';
+    current = { result, separator: loaded[0].separator, baseName };
+    render(result);
+  }
+
+  // Reads one file and checks it has the columns we need, so a bad file is turned away
+  // on its own instead of blocking the files that are already loaded.
+  async function readCheckedFile(file) {
     try {
-      const { header, rows, separator } = readFile(await file.arrayBuffer(), file.name, window.XLSX);
-      const result = cleanList(header, rows);
-      current = { result, separator, baseName: file.name.replace(/\.[^.]+$/, '') };
-      render(result);
+      const table = { name: file.name, ...readFile(await file.arrayBuffer(), file.name, window.XLSX) };
+      combineFiles([table]);
+      return table;
+    } catch (error) {
+      throw new Error(error.message.startsWith(`${file.name}:`) ? error.message : `${file.name}: ${error.message}`);
+    }
+  }
+
+  // Adds to the files already loaded. A file with the same name as a loaded one replaces it,
+  // since that is usually a corrected copy of the same export.
+  async function addFiles(fileList) {
+    const errors = [];
+    for (const file of fileList) {
+      try {
+        const table = await readCheckedFile(file);
+        const existing = loaded.findIndex((other) => other.name === table.name);
+        if (existing === -1) loaded.push(table);
+        else loaded[existing] = table;
+      } catch (error) {
+        console.error(error);
+        errors.push(error.message);
+      }
+    }
+    try {
+      rebuild();
     } catch (error) {
       console.error(error);
-      showError(`Couldn't clean this file. ${error.message}`);
+      errors.push(error.message);
     }
+    if (errors.length) showError(`Couldn't add ${errors.length === 1 ? 'this file' : 'these files'}. ${errors.join(' ')}`);
+  }
+
+  function handleFiles(fileList) {
+    const files = [...fileList];
+    if (files.length) queue = queue.then(() => addFiles(files));
   }
 
   function download(content, fileName, type) {
@@ -89,6 +153,11 @@
     download(csv, `${baseName}-clean.csv`, 'text/csv;charset=utf-8');
   });
 
+  $('start-over').addEventListener('click', () => {
+    loaded = [];
+    rebuild();
+  });
+
   $('download-check').addEventListener('click', () => {
     const { result, baseName } = current;
     download(toXlsx(result.checkHeader, result.check, 'Rows to check'), `${baseName}-check.xlsx`, XLSX_TYPE);
@@ -96,8 +165,8 @@
 
   const dropZone = $('drop-zone');
   $('file-input').addEventListener('change', (event) => {
-    handleFile(event.target.files[0]);
-    event.target.value = ''; // allow choosing the same file again
+    handleFiles(event.target.files);
+    event.target.value = ''; // allow choosing the same files again
   });
   dropZone.addEventListener('dragover', (event) => {
     event.preventDefault();
@@ -107,7 +176,7 @@
   dropZone.addEventListener('drop', (event) => {
     event.preventDefault();
     dropZone.classList.remove('dragging');
-    handleFile(event.dataTransfer.files[0]);
+    handleFiles(event.dataTransfer.files);
   });
   // Dropping a file anywhere else would make the browser open it and leave the page.
   window.addEventListener('dragover', (event) => event.preventDefault());
