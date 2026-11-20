@@ -109,6 +109,10 @@ exports are very large (hundreds of thousands of rows).
 **Decision (2026-11-19):** single offline web page. Plain JS, no framework, SheetJS vendored in
 `vendor/`; `npm run build` inlines everything into `dist/list-cleaner.html`. See README for layout.
 
+**Backend roadmap (planned 2026-11-20, not built):** keep the offline page and add a Node.js
+(Fastify + PostgreSQL) backend that reuses the same cleaning code, in phases. See
+[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+
 ## 9. Milestones
 
 | # | Milestone | Status |
