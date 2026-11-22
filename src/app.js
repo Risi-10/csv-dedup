@@ -163,6 +163,39 @@
     download(toXlsx(result.checkHeader, result.check, 'Rows to check'), `${baseName}-check.xlsx`, XLSX_TYPE);
   });
 
+  const THEME_KEY = 'theme';
+  const themeButton = $('theme-toggle');
+  const systemDark = window.matchMedia('(prefers-color-scheme: dark)');
+
+  function applyTheme(theme) {
+    document.documentElement.dataset.theme = theme;
+    themeButton.textContent = theme === 'dark' ? '☀ Light mode' : '☾ Dark mode';
+  }
+
+  function savedTheme() {
+    try {
+      return localStorage.getItem(THEME_KEY);
+    } catch {
+      return null;
+    }
+  }
+
+  themeButton.addEventListener('click', () => {
+    const next = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
+    applyTheme(next);
+    try {
+      localStorage.setItem(THEME_KEY, next);
+    } catch (error) {
+      // Storage blocked: the switch still works, it just won't be remembered next time.
+      console.warn('Could not save theme choice:', error);
+    }
+  });
+  // Until a choice is saved, keep following the computer's setting.
+  systemDark.addEventListener('change', (event) => {
+    if (!savedTheme()) applyTheme(event.matches ? 'dark' : 'light');
+  });
+  applyTheme(document.documentElement.dataset.theme);
+
   const dropZone = $('drop-zone');
   $('file-input').addEventListener('change', (event) => {
     handleFiles(event.target.files);
