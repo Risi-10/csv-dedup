@@ -9,7 +9,8 @@ Drop in Monday's export and get back a clean list:
 
 The data never leaves the computer: everything runs in the browser, with no internet needed.
 
-Status: **prototype.** See [CLAUDE.md](CLAUDE.md) for the project brief and milestones.
+Status: **prototype.** See [CLAUDE.md](CLAUDE.md) for the project brief and milestones, and
+[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the plan to add a backend and database.
 
 ## Using it
 
