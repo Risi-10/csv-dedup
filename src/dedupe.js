@@ -59,9 +59,36 @@
     return row.every((cell) => String(cell ?? '').trim() === '');
   }
 
-  function cleanRecord(row, source, columns, countryCode) {
+  const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+  // When values are moved by hand in Excel without their header, a row's email or phone ends up
+  // under another column. Swap them back into their own columns. Returns what was moved, so the
+  // row can be flagged. The ID column is never searched: a long numeric ID could look like a phone.
+  function putContactsBack(cells, columns, countryCode) {
+    const moved = [];
+    const looksRight = {
+      email: (value) => EMAIL_PATTERN.test(value),
+      phone: (value) => normalizePhone(value, countryCode).ok,
+    };
+    for (const role of ['email', 'phone']) {
+      const target = columns[role];
+      if (target === null || looksRight[role](cells[target])) continue;
+      const from = cells.findIndex((value, i) => i !== target && i !== columns.id && looksRight[role](value));
+      if (from === -1) continue;
+      [cells[target], cells[from]] = [cells[from], cells[target]];
+      moved.push({ role, from, to: target });
+    }
+    return moved;
+  }
+
+  function cleanRecord(row, source, columns, countryCode, header) {
     const cells = row.map((cell) => String(cell ?? '').trim());
     const flags = [];
+    const moved = putContactsBack(cells, columns, countryCode);
+    if (moved.length) {
+      const where = moved.map(({ role, from }) => `${role} was under "${header[from]}"`).join(', ');
+      flags.push(`values were in the wrong columns (${where}); moved back, check this row`);
+    }
     for (const role of ['name', 'firstName', 'lastName']) {
       if (columns[role] !== null) cells[columns[role]] = fixName(cells[columns[role]]);
     }
@@ -86,6 +113,7 @@
 
     return {
       source,
+      moved,
       cells,
       flags,
       id: columns.id !== null ? cells[columns.id] : '',
@@ -224,6 +252,18 @@
     return parts.join(' · ');
   }
 
+  // A few rows with values in the wrong column are fixed one by one. When most rows need it,
+  // the header row itself is out of place, and guessing every row would be risky.
+  function checkHeadersMatchData(records, header) {
+    const movedRecords = records.filter((r) => r.moved.length);
+    if (movedRecords.length < 3 || movedRecords.length * 2 <= records.length) return;
+    const { role, from, to } = movedRecords[0].moved[0];
+    throw new Error(
+      `In most rows the ${role} is not under "${header[to]}" but under "${header[from]}". `
+      + 'The header row probably wasn\'t moved together with the data: check that each header is above its own column.',
+    );
+  }
+
   // header: array of column names; rows: arrays of cell values (without the header).
   // options.countryCode: for phones written without one (defaults to DEFAULT_COUNTRY_CODE).
   // options.sources: { file, row } for each row, from combineFiles; defaults to rows 2, 3, …
@@ -234,7 +274,8 @@
     const records = rows
       .map((row, index) => ({ row, source: sourceOf(index) }))
       .filter(({ row }) => !isBlankRow(row))
-      .map(({ row, source }) => cleanRecord(Array.from({ length: width }, (_, c) => row[c]), source, columns, countryCode));
+      .map(({ row, source }) => cleanRecord(Array.from({ length: width }, (_, c) => row[c]), source, columns, countryCode, header));
+    checkHeadersMatchData(records, header);
 
     const customers = findGroups(records).map((members) => mergeGroup(members, columns));
     const clean = customers.map((c) => c.cells);

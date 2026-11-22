@@ -111,3 +111,30 @@ test('a name shared by many customers gives each row one short flag, not one per
   assert.equal(result.check[0][1], 'phone missing; same name, different phone/email, as '
     + 'row 3 (Arben Hoxha), row 4 (Arben Hoxha), row 5 (Arben Hoxha) and 196 more');
 });
+
+const albanianHeader = ['ID', 'EMRI', 'TELEFONI', 'EMAIL', 'QYTETI'];
+
+test('puts an email and phone typed into the wrong columns back, and flags the row', () => {
+  const result = cleanList(albanianHeader, [
+    ['7', 'GËZIM RRAPAJ', 'gezim.rrapaj@example.com', 'Vlorë', '00355682345678'],
+    ['8', 'MARIA ROSSI', '+39 333 1234567', 'maria.rossi@example.com', 'Bari'],
+  ]);
+  assert.deepEqual(result.clean, [
+    ['7', 'Gëzim Rrapaj', '+355682345678', 'gezim.rrapaj@example.com', 'Vlorë'],
+    ['8', 'Maria Rossi', '+393331234567', 'maria.rossi@example.com', 'Bari'],
+  ]);
+  assert.equal(result.check.length, 1);
+  assert.equal(result.check[0][1],
+    'values were in the wrong columns (email was under "TELEFONI", phone was under "QYTETI"); moved back, check this row');
+});
+
+test('never takes a phone number from the customer ID column', () => {
+  const result = cleanList(albanianHeader, [['0691234567', 'Ana Gjoni', '', 'ana@example.com', 'Tiranë']]);
+  assert.deepEqual(result.clean[0].slice(0, 3), ['0691234567', 'Ana Gjoni', '']);
+  assert.match(result.check[0][1], /^phone missing$/);
+});
+
+test('stops with a clear message when most rows do not match their headers', () => {
+  const rows = [1, 2, 3, 4].map((i) => [String(i), `ana${i}@example.com`, `Person ${i}`, 'Tiranë', `069123456${i}`]);
+  assert.throws(() => cleanList(albanianHeader, rows), /In most rows the email is not under "EMAIL" but under "EMRI"/);
+});

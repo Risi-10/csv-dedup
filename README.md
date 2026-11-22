@@ -60,6 +60,11 @@ During development you can also open `src/index.html` directly; it loads the sam
 - When merging, the most complete row wins, gaps are filled from the other copies, and the name
   spelling most copies agree on is kept. If merged copies had different phones or emails, the row is flagged.
 
+**Columns** are found by header name, so their order doesn't matter. If a row's email or phone was typed
+into another column (e.g. the email under `TELEFONI`), it is moved back to its own column and the row is
+flagged. If most rows are like that, the header row itself is out of place, and the app stops with a
+message instead of guessing.
+
 **Downloads**: the Excel file stores every cell as text, so phone numbers keep their `+`. The CSV
 uses the same separator as the input and starts with a UTF-8 BOM so Excel shows accents correctly.
 
