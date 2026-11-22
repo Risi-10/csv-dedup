@@ -40,6 +40,16 @@
 
     <section id="result" hidden>
       <p id="summary" class="summary" aria-live="polite"></p>
+      <p id="columns-note" class="note" hidden></p>
+
+      <label class="field">
+        Column names in the clean file
+        <select id="header-language">
+          <option value="original">Same as the first file</option>
+          <option value="sq">Shqip (Emri, Telefoni, Qyteti…)</option>
+          <option value="en">English (Name, Phone, City…)</option>
+        </select>
+      </label>
 
       <div class="actions">
         <button id="download-clean-xlsx" class="primary" type="button">Download clean list (Excel)</button>

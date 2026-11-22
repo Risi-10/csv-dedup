@@ -43,7 +43,7 @@ During development you can also open `src/index.html` directly; it loads the sam
 | File | Job |
 |---|---|
 | `src/parse.js` | Reads CSV (detects UTF-8 vs Windows-1252 and `,` / `;` / tab) and Excel files |
-| `src/columns.js` | Finds the name, phone, email and customer ID columns by header name |
+| `src/columns.js` | Finds columns by header name in Albanian, English and German (name, phone, email, ID, plus city, address, country, postal code, birthday, notes) and names them for the download |
 | `src/combine.js` | Joins several files into one table, lining up columns by role or header, and remembers each row's file and row number |
 | `src/names.js` | Fixes capitals word by word; leaves already mixed-case words like `McDonald` alone |
 | `src/phones.js` | Converts phones to `+<country><number>`; default country code is `355`, Albania (`DEFAULT_COUNTRY_CODE`). Albanian and Kosovo numbers with a digit missing or extra are flagged |
@@ -65,6 +65,12 @@ During development you can also open `src/index.html` directly; it loads the sam
 into another column (e.g. the email under `TELEFONI`), it is moved back to its own column and the row is
 flagged. If most rows are like that, the header row itself is out of place, and the app stops with a
 message instead of guessing.
+
+**Files in different languages** line up: known columns are matched by meaning, so `QYTETI` and `City`
+become one column. Columns the app doesn't know only line up when their header text is the same; any
+column that only some files have is listed under the summary. **Column names in the clean file** can
+be kept as in the first file (default), or set to Albanian (`Emri`, `Telefoni`, `Qyteti`…) or English
+(`Name`, `Phone`, `City`…); the page remembers the choice. Unknown columns keep their own name.
 
 **Downloads**: the Excel file stores every cell as text, so phone numbers keep their `+`. The CSV
 uses the same separator as the input and starts with a UTF-8 BOM so Excel shows accents correctly.

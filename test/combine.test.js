@@ -54,3 +54,22 @@ test('names the file when one of them is missing a required column', () => {
     /^Error: bad\.csv: Could not find a name column/,
   );
 });
+
+test('lines up known columns written in different languages (Qyteti = City)', () => {
+  const { header, rows, roles, columnsNotInAllFiles } = combineFiles([
+    csvFile('shqip.csv', 'ID,EMRI,TELEFONI,EMAIL,QYTETI\n1,Arben Hoxha,0691234567,arben@example.com,Tiranë\n'),
+    csvFile('english.csv', 'Name,Phone,Email,City,Address,Fax\nElira Cela,0692233445,elira@example.com,Durrës,Rruga 1,042\n'),
+  ]);
+  assert.deepEqual(header, ['ID', 'EMRI', 'TELEFONI', 'EMAIL', 'QYTETI', 'Address', 'Fax']);
+  assert.deepEqual(roles, ['id', 'name', 'phone', 'email', 'city', 'address', null]);
+  assert.deepEqual(rows.map((row) => row[4]), ['Tiranë', 'Durrës']);
+  assert.deepEqual(columnsNotInAllFiles, [
+    { header: 'ID', files: ['shqip.csv'] },
+    { header: 'Address', files: ['english.csv'] },
+    { header: 'Fax', files: ['english.csv'] },
+  ]);
+});
+
+test('reports no partial columns for a single file', () => {
+  assert.deepEqual(combineFiles([csvFile('a.csv', 'Name,Phone,Fax\nAna,0691234567,1\n')]).columnsNotInAllFiles, []);
+});

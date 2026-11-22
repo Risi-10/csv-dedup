@@ -10,7 +10,38 @@
     firstName: ['firstname', 'first', 'givenname', 'forename', 'vorname', 'emri'],
     lastName: ['lastname', 'last', 'surname', 'familyname', 'nachname', 'mbiemri'],
     name: ['name', 'fullname', 'customername', 'customer', 'kunde', 'kundenname', 'emri', 'emriplotë', 'emriplote', 'emrimbiemri', 'emridhembiemri', 'klienti'],
+    // Not needed for cleaning; known so the same column lines up across files in different
+    // languages ("Qyteti" and "City") and can be renamed in the download.
+    city: ['city', 'town', 'stadt', 'ort', 'wohnort', 'qyteti', 'qytet', 'vendbanimi'],
+    address: ['address', 'streetaddress', 'street', 'adresse', 'strasse', 'straße', 'adresa', 'adresë', 'adrese', 'rruga'],
+    country: ['country', 'land', 'shteti', 'shtet'],
+    postalCode: ['postalcode', 'postcode', 'zip', 'zipcode', 'plz', 'postleitzahl', 'kodipostar', 'kodiipostes'],
+    birthday: ['birthday', 'birthdate', 'dateofbirth', 'dob', 'geburtsdatum', 'datëlindja', 'datelindja', 'ditëlindja', 'ditelindja'],
+    notes: ['notes', 'note', 'comment', 'comments', 'remarks', 'bemerkung', 'bemerkungen', 'notizen', 'shënime', 'shenime', 'koment', 'komente'],
   };
+
+  // Column names for the download, by role. Read back by detectColumns, so a clean file can be
+  // dropped in again. Columns the app doesn't know keep the name they had in the file.
+  const HEADER_LABELS = {
+    sq: {
+      id: 'ID Klienti', name: 'Emri', firstName: 'Emri', lastName: 'Mbiemri', phone: 'Telefoni',
+      email: 'Email', city: 'Qyteti', address: 'Adresa', country: 'Shteti', postalCode: 'Kodi postar',
+      birthday: 'Datëlindja', notes: 'Shënime',
+    },
+    en: {
+      id: 'Customer ID', name: 'Name', firstName: 'First name', lastName: 'Last name', phone: 'Phone',
+      email: 'Email', city: 'City', address: 'Address', country: 'Country', postalCode: 'Postal code',
+      birthday: 'Birthday', notes: 'Notes',
+    },
+  };
+
+  // roles[i] is the role of column i, or null. language: 'sq', 'en', or anything else for the
+  // header as it was in the (first) file.
+  function headerInLanguage(header, roles, language) {
+    const labels = HEADER_LABELS[language];
+    if (!labels) return [...header];
+    return header.map((text, i) => (roles[i] ? labels[roles[i]] : text));
+  }
 
   function normalizeHeader(header) {
     return String(header ?? '').toLowerCase().replace(/[^\p{L}\p{N}]/gu, '');
@@ -45,7 +76,7 @@
     return columns;
   }
 
-  const api = { detectColumns };
+  const api = { detectColumns, headerInLanguage, HEADER_LABELS };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.Cleaner = Object.assign(root.Cleaner || {}, api);
 })(typeof self !== 'undefined' ? self : this);

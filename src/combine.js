@@ -25,13 +25,26 @@
     return keys;
   }
 
+  const roleOf = (key) => (key.startsWith('role:') ? key.slice('role:'.length) : null);
+
+  // Columns that only some of the files have, so the page can say which cells were left empty.
+  function columnsNotInAllFiles(files, fileKeys, header, positionOfKey) {
+    if (files.length < 2) return [];
+    return [...positionOfKey].flatMap(([key, position]) => {
+      const having = files.filter((_, f) => fileKeys[f].includes(key)).map((file) => file.name);
+      return having.length < files.length ? [{ header: header[position], files: having }] : [];
+    });
+  }
+
   // files: [{ name, header, rows, rowNumbers }] as returned by readFile, plus the file name.
-  // Returns one table for cleanList: { header, rows, sources }, where sources[i] says which
-  // file and row rows[i] came from. The file name is left out when there is only one file.
+  // Returns one table for cleanList: { header, rows, sources, roles, columnsNotInAllFiles }.
+  // sources[i] says which file and row rows[i] came from (the file name is left out when there
+  // is only one file); roles[c] is what column c holds ("city", …) or null if we don't know.
   function combineFiles(files) {
     if (files.length === 0) throw new Error('No files to clean.');
 
     const header = [];
+    const roles = [];
     const positionOfKey = new Map();
     const fileKeys = files.map((file) => {
       const keys = columnKeys(file);
@@ -39,6 +52,7 @@
         if (positionOfKey.has(key)) return;
         positionOfKey.set(key, header.length);
         header.push(file.header[i]);
+        roles.push(roleOf(key));
       });
       return keys;
     });
@@ -57,7 +71,13 @@
       });
     });
 
-    return { header, rows, sources };
+    return {
+      header,
+      rows,
+      sources,
+      roles,
+      columnsNotInAllFiles: columnsNotInAllFiles(files, fileKeys, header, positionOfKey),
+    };
   }
 
   const api = { combineFiles };
