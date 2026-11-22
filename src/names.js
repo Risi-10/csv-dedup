@@ -27,8 +27,21 @@
       .join(' ');
   }
 
+  // Titles written before a name: English, and Albanian "Z." (Mr) / "Znj." (Mrs).
+  const TITLES = new Set(['dr', 'prof', 'mr', 'mrs', 'ms', 'ing', 'z', 'znj']);
+
+  // For matching only, never shown: drops leading titles, dots and accents, so
+  // "DR. AGIM LEKA" and "Agim Leka" match, and so do "Çela" and "Cela" (typed without ç/ë).
   function nameKey(value) {
-    return collapseSpaces(value).toLocaleLowerCase();
+    const words = collapseSpaces(value)
+      .toLocaleLowerCase()
+      .normalize('NFD')
+      .replace(/\p{M}/gu, '')
+      .replace(/\./g, ' ')
+      .split(' ')
+      .filter(Boolean);
+    while (words.length > 1 && TITLES.has(words[0])) words.shift();
+    return words.join(' ');
   }
 
   const api = { fixName, nameKey, collapseSpaces };

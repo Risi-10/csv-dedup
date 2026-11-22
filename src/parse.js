@@ -95,7 +95,14 @@
     table = dropTrailingEmptyRows(table);
     if (table.length < 2) throw new Error('The file has no customer rows.');
     const header = table[0].map((h) => String(h ?? '').trim());
-    return { header, rows: table.slice(1), separator };
+    return { header, rows: dropRepeatedHeaders(table.slice(1), header), separator };
+  }
+
+  // Exports glued together from several pages repeat the header row partway down.
+  function dropRepeatedHeaders(rows, header) {
+    const key = (row) => row.map((cell) => String(cell ?? '').trim().toLowerCase()).join('\u0000');
+    const headerKey = key(header);
+    return rows.filter((row) => key(row) !== headerKey);
   }
 
   const api = { decodeBytes, detectSeparator, parseCsv, toCsv, readFile };
