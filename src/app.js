@@ -1,11 +1,11 @@
 (function () {
   'use strict';
 
-  const { readFile, combineFiles, cleanList, toCsv } = window.Cleaner;
+  const { readFile, combineFiles, cleanList, toCsv, headerInLanguage } = window.Cleaner;
   const PREVIEW_ROWS = 50;
   const $ = (id) => document.getElementById(id);
 
-  let current = null; // { result, separator, baseName }
+  let current = null; // { result, roles, columnsNotInAllFiles, separator, baseName }
   let loaded = []; // files read so far, in the order they were added: readFile output plus name
   let queue = Promise.resolve(); // handles drops one after another, so quick drops keep their order
 
@@ -48,13 +48,30 @@
     $('drop-title').textContent = loaded.length ? 'Drag another export here to add it' : 'Drag the export here';
   }
 
-  function render(result) {
+  // The column names chosen for the clean file; the cleaning itself doesn't depend on them.
+  function outputHeader() {
+    return headerInLanguage(current.result.header, current.roles, $('header-language').value);
+  }
+
+  function outputCheckHeader() {
+    return [...current.result.checkHeader.slice(0, 2), ...outputHeader()];
+  }
+
+  function describeColumnsNotInAllFiles(columns) {
+    const list = columns.map(({ header, files }) => `${header} (${files.join(', ')})`).join('; ');
+    return `Columns only in some files, left empty for the others: ${list}.`;
+  }
+
+  function render() {
+    const { result, columnsNotInAllFiles } = current;
     const filesNote = loaded.length > 1 ? `${loaded.length} files combined · ` : '';
     $('summary').textContent = filesNote + result.summary.text;
+    $('columns-note').hidden = columnsNotInAllFiles.length === 0;
+    $('columns-note').textContent = describeColumnsNotInAllFiles(columnsNotInAllFiles);
     $('check-section').hidden = result.check.length === 0;
     $('download-check').hidden = result.check.length === 0;
-    renderTable($('check-table'), result.checkHeader, result.check);
-    renderTable($('clean-table'), result.header, result.clean.slice(0, PREVIEW_ROWS));
+    renderTable($('check-table'), outputCheckHeader(), result.check);
+    renderTable($('clean-table'), outputHeader(), result.clean.slice(0, PREVIEW_ROWS));
     $('preview-note').textContent = result.clean.length > PREVIEW_ROWS
       ? `(first ${PREVIEW_ROWS} of ${result.clean.length.toLocaleString('en-US')})`
       : '';
@@ -70,11 +87,11 @@
       $('result').hidden = true;
       return;
     }
-    const { header, rows, sources } = combineFiles(loaded);
+    const { header, rows, sources, roles, columnsNotInAllFiles } = combineFiles(loaded);
     const result = cleanList(header, rows, { sources });
     const baseName = loaded.length === 1 ? loaded[0].name.replace(/\.[^.]+$/, '') : 'combined-list';
-    current = { result, separator: loaded[0].separator, baseName };
-    render(result);
+    current = { result, roles, columnsNotInAllFiles, separator: loaded[0].separator, baseName };
+    render();
   }
 
   // Reads one file and checks it has the columns we need, so a bad file is turned away
@@ -143,13 +160,13 @@
 
   $('download-clean-xlsx').addEventListener('click', () => {
     const { result, baseName } = current;
-    download(toXlsx(result.header, result.clean, 'Clean list'), `${baseName}-clean.xlsx`, XLSX_TYPE);
+    download(toXlsx(outputHeader(), result.clean, 'Clean list'), `${baseName}-clean.xlsx`, XLSX_TYPE);
   });
 
   $('download-clean-csv').addEventListener('click', () => {
     const { result, separator, baseName } = current;
     // The BOM tells Excel the file is UTF-8, so "Müller" opens correctly.
-    const csv = '﻿' + toCsv([result.header, ...result.clean], separator);
+    const csv = '﻿' + toCsv([outputHeader(), ...result.clean], separator);
     download(csv, `${baseName}-clean.csv`, 'text/csv;charset=utf-8');
   });
 
@@ -160,7 +177,25 @@
 
   $('download-check').addEventListener('click', () => {
     const { result, baseName } = current;
-    download(toXlsx(result.checkHeader, result.check, 'Rows to check'), `${baseName}-check.xlsx`, XLSX_TYPE);
+    download(toXlsx(outputCheckHeader(), result.check, 'Rows to check'), `${baseName}-check.xlsx`, XLSX_TYPE);
+  });
+
+  const HEADER_LANGUAGE_KEY = 'header-language';
+  const headerLanguage = $('header-language');
+  try {
+    const saved = localStorage.getItem(HEADER_LANGUAGE_KEY);
+    if ([...headerLanguage.options].some((option) => option.value === saved)) headerLanguage.value = saved;
+  } catch (error) {
+    console.warn('Could not read the saved column-name choice:', error);
+  }
+  headerLanguage.addEventListener('change', () => {
+    try {
+      localStorage.setItem(HEADER_LANGUAGE_KEY, headerLanguage.value);
+    } catch (error) {
+      // Storage blocked: the choice still applies now, it just won't be remembered next time.
+      console.warn('Could not save the column-name choice:', error);
+    }
+    if (current) render();
   });
 
   const THEME_KEY = 'theme';
