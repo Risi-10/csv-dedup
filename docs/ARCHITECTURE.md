@@ -3,8 +3,9 @@
 How the list cleaner works today, and the plan for growing it into an app with a backend and a
 database without throwing away what already works.
 
-Status: **phase 0 done** (2026-11-23); later phases are plans (agreed 2026-11-20). Each phase below
-becomes its own branch and pull request.
+Status: **phases 0 and 1 done** (2026-11-23), except phase 1's "clean on server" mode in the page,
+which waits until the server is actually used. Later phases are plans (agreed 2026-11-20). Each
+phase below becomes its own branch and pull request.
 
 ---
 

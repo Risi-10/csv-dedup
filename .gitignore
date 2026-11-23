@@ -23,5 +23,3 @@ desktop.ini
 # Dependencies and build output
 node_modules/
 dist/
-__pycache__/
-.venv/

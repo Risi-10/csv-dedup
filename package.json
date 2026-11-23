@@ -2,12 +2,18 @@
   "name": "newsletter-list-cleaner",
   "version": "0.1.0",
   "private": true,
-  "description": "Offline web page that cleans a customer export: name capitals, phone format, duplicates.",
+  "description": "Cleans a customer export (name capitals, phone format, duplicates) as an offline web page or through a small API.",
   "scripts": {
     "test": "node --test",
-    "build": "node scripts/build.mjs"
+    "build": "node scripts/build.mjs",
+    "start": "node --env-file-if-exists=.env server/index.js",
+    "dev": "node --watch --env-file-if-exists=.env server/index.js"
   },
   "engines": {
-    "node": ">=20"
+    "node": ">=22.9"
+  },
+  "dependencies": {
+    "@fastify/multipart": "10.1.9",
+    "fastify": "5.12.8"
   }
 }
