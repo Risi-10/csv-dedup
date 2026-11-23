@@ -42,18 +42,27 @@ During development you can also open `src/web/index.html` directly; it loads the
 
 ## Running the server
 
-A small API that runs the same cleaning code as the page. There is no database yet: uploads are
-cleaned in memory and nothing is stored. See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for what comes next.
+The server serves the same page and a small API, both using the cleaning code in `src/core/`. There
+is no database yet: uploads are cleaned in memory and nothing is stored. See
+[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for what comes next.
+
+The page picks its mode from how it was opened, with no setting:
+- **Opened from the server** (`http://…`): files are sent to `POST /api/clean`, and the page says so.
+- **Opened as a file** (`dist/list-cleaner.html` or `src/web/index.html`): files are cleaned in the
+  browser and never leave the computer, as before.
+
+Both give the same result. Downloads and the column-name choice work the same way in both.
 
 ```sh
 cp .env.example .env   # first time only; every setting is optional
 npm run dev            # restarts on code changes (npm start for a plain run)
 ```
 
-The server listens on `http://127.0.0.1:3000` by default (`PORT`, `HOST` in `.env`).
+Then open `http://127.0.0.1:3000` (change it with `PORT`, `HOST` in `.env`).
 
 | Method | Path | Does |
 |---|---|---|
+| GET | `/` | The page, plus the scripts and stylesheet it loads (only those files are served) |
 | GET | `/health` | `{ "status": "ok" }` when the server is up |
 | POST | `/api/clean` | Cleans the uploaded files as one list and returns the result as JSON |
 
@@ -67,7 +76,9 @@ curl -F "files=@samples/messy-export.csv" -F countryCode=1 http://localhost:3000
 ```
 
 It returns `summary` (counts and the summary line), `header` and `clean` (the clean list),
-`checkHeader` and `check` (the rows to check) and `columnsNotInAllFiles`. Problems with the upload
+`checkHeader` and `check` (the rows to check), `columnsNotInAllFiles`, and `roles` (what each column
+holds), `separator` (the first file's CSV separator) and `files` (row count per file), which the page
+uses to rename columns and write downloads itself. Problems with the upload
 return `400` (or `413` for too large / too many files) with `{ "error": "<file>: <message>" }`.
 Server logs record only the method, path and status of each request, never file contents.
 

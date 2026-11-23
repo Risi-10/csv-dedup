@@ -4,6 +4,7 @@ const Fastify = require('fastify');
 const multipart = require('@fastify/multipart');
 const healthRoutes = require('./routes/health.js');
 const cleanRoutes = require('./routes/clean.js');
+const webRoutes = require('./routes/web.js');
 
 // Builds the server without starting it, so tests can call it with app.inject().
 // Request logs hold only method, URL and status: never file contents (customer data).
@@ -26,6 +27,7 @@ function buildApp({ maxFileMb = 20, maxFiles = 10, logLevel = 'info' } = {}) {
 
   app.register(healthRoutes);
   app.register(cleanRoutes, { maxFileMb, maxFiles });
+  app.register(webRoutes);
   return app;
 }
 
