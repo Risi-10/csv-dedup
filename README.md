@@ -29,14 +29,47 @@ and the browser remembers the choice.
 
 ## Setup
 
-Requires [Node.js](https://nodejs.org/) 20 or newer, for building and tests only. There are no npm dependencies.
+Requires [Node.js](https://nodejs.org/) 22.9 or newer. The offline page itself needs no install;
+npm packages are only used by the server.
 
 ```sh
+npm install     # server dependencies (versions pinned in package-lock.json)
 npm run build   # writes dist/list-cleaner.html, the single file to hand over
-npm test        # unit tests + end-to-end test on samples/ (the sample uses US numbers, so it runs with country code 1)
+npm test        # unit tests, server tests and an end-to-end test on samples/ (the sample uses US numbers, so it runs with country code 1)
 ```
 
 During development you can also open `src/web/index.html` directly; it loads the same scripts unbundled.
+
+## Running the server
+
+A small API that runs the same cleaning code as the page. There is no database yet: uploads are
+cleaned in memory and nothing is stored. See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for what comes next.
+
+```sh
+cp .env.example .env   # first time only; every setting is optional
+npm run dev            # restarts on code changes (npm start for a plain run)
+```
+
+The server listens on `http://127.0.0.1:3000` by default (`PORT`, `HOST` in `.env`).
+
+| Method | Path | Does |
+|---|---|---|
+| GET | `/health` | `{ "status": "ok" }` when the server is up |
+| POST | `/api/clean` | Cleans the uploaded files as one list and returns the result as JSON |
+
+`POST /api/clean` takes `multipart/form-data`:
+- `files`: one or more `.csv` / `.xlsx` files (at most `MAX_FILES`, each up to `MAX_FILE_MB`).
+- `headerLanguage` (optional): `original` (default), `sq` or `en`, as the page's "Column names" choice.
+- `countryCode` (optional): for phones without one, digits only (default `355`).
+
+```sh
+curl -F "files=@samples/messy-export.csv" -F countryCode=1 http://localhost:3000/api/clean
+```
+
+It returns `summary` (counts and the summary line), `header` and `clean` (the clean list),
+`checkHeader` and `check` (the rows to check) and `columnsNotInAllFiles`. Problems with the upload
+return `400` (or `413` for too large / too many files) with `{ "error": "<file>: <message>" }`.
+Server logs record only the method, path and status of each request, never file contents.
 
 ## How it works
 
@@ -49,6 +82,7 @@ During development you can also open `src/web/index.html` directly; it loads the
 | `src/core/phones.js` | Converts phones to `+<country><number>`; default country code is `355`, Albania (`DEFAULT_COUNTRY_CODE`). Albanian and Kosovo numbers with a digit missing or extra are flagged |
 | `src/core/dedupe.js` | Groups duplicates, merges them and builds the "rows to check" list and summary |
 | `src/web/app.js` | Page wiring: drop zone, previews, downloads (with `index.html` and `styles.css`) |
+| `server/` | The API: `app.js` (Fastify setup), `clean.js` (same steps as the page), `routes/`, `config.js` |
 | `vendor/xlsx.full.min.js` | [SheetJS](https://sheetjs.com/) Community Edition **0.20.3**, from `cdn.sheetjs.com` (the npm registry copy is outdated) |
 
 **Duplicate rules**
