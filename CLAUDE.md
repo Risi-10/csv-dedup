@@ -111,8 +111,9 @@ exports are very large (hundreds of thousands of rows).
 
 **Backend roadmap (planned 2026-11-20):** keep the offline page and add a Node.js
 (Fastify + PostgreSQL) backend that reuses the same cleaning code, in phases. See
-[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md). Phases 0–1 built 2026-11-23: `server/` with
-`GET /health` and `POST /api/clean`, no database yet.
+[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md). Phases 0–1 built 2026-11-23: `server/` serves the
+page at `/` plus `GET /health` and `POST /api/clean`, no database yet. Opened from the server, the
+page cleans there; opened as a file, it cleans in the browser.
 
 ## 9. Milestones
 

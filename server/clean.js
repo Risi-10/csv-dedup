@@ -20,6 +20,8 @@ class InputError extends Error {
 
 // files: [{ name, bytes }]. Returns what the page shows: the summary, the clean list and the rows
 // to check, with column names in headerLanguage ('original' keeps the first file's names).
+// roles and separator let the page rename columns and write the CSV download itself, as offline;
+// files gives each file's row count for the file list.
 function cleanUploadedFiles(files, { headerLanguage = 'original', countryCode } = {}) {
   if (files.length === 0) throw new InputError('No files to clean.');
   if (!HEADER_LANGUAGES.includes(headerLanguage)) {
@@ -43,6 +45,9 @@ function cleanUploadedFiles(files, { headerLanguage = 'original', countryCode } 
     checkHeader: [...result.checkHeader.slice(0, 2), ...outputHeader],
     check: result.check,
     columnsNotInAllFiles,
+    roles,
+    separator: tables[0].separator,
+    files: tables.map((table) => ({ name: table.name, rows: table.rows.length })),
   };
 }
 

@@ -60,6 +60,18 @@ test('combines several files and renames columns on request', async () => {
   assert.ok(body.columnsNotInAllFiles.length > 0);
 });
 
+test('returns what the page needs to rename columns and write the CSV itself', async () => {
+  const { status, body } = await postClean([
+    { name: 'monday.csv', content: 'EMRI;TELEFONI;QYTETI\nARBEN HOXHA;0691234567;Tiranë\nANA GJONI;0681112223;Durrës\n' },
+    { name: 'tuesday.csv', content: 'Phone,Name,Notes\n+355 69 123 4567,arben hoxha,VIP\n' },
+  ]);
+  assert.equal(status, 200);
+  assert.deepEqual(body.header, ['EMRI', 'TELEFONI', 'QYTETI', 'Notes']);
+  assert.deepEqual(body.roles, ['name', 'phone', 'city', 'notes']);
+  assert.equal(body.separator, ';', 'separator of the first file');
+  assert.deepEqual(body.files, [{ name: 'monday.csv', rows: 2 }, { name: 'tuesday.csv', rows: 1 }]);
+});
+
 test('reads Excel files', async () => {
   const book = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(book, XLSX.utils.aoa_to_sheet([['Name', 'Phone'], ['ANNA MÜLLER', '069 123 4567']]), 'Sheet1');
