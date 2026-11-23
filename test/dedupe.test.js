@@ -2,8 +2,8 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
-const { cleanList, namesClose } = require('../src/dedupe.js');
-const { readFile, toCsv } = require('../src/parse.js');
+const { cleanList, namesClose } = require('../src/core/dedupe.js');
+const { readFile, toCsv } = require('../src/core/parse.js');
 
 const header = ['Name', 'Phone', 'Email'];
 // These examples use the US numbers from the project brief.

@@ -1,6 +1,6 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { fixName, nameKey } = require('../src/names.js');
+const { fixName, nameKey } = require('../src/core/names.js');
 
 test('fixes all-caps and all-lowercase names', () => {
   assert.equal(fixName('ANNA MÜLLER'), 'Anna Müller');
