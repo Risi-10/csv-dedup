@@ -5,7 +5,7 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-const srcDir = join(root, 'src');
+const srcDir = join(root, 'src', 'web');
 const outFile = join(root, 'dist', 'list-cleaner.html');
 
 const read = (relativePath) => readFileSync(join(srcDir, relativePath), 'utf8');

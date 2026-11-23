@@ -1,6 +1,6 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { detectColumns, headerInLanguage, HEADER_LABELS } = require('../src/columns.js');
+const { detectColumns, headerInLanguage, HEADER_LABELS } = require('../src/core/columns.js');
 
 test('finds columns regardless of case and punctuation', () => {
   const columns = detectColumns(['Customer ID', 'Full Name', 'E-Mail', 'Phone Number', 'City']);

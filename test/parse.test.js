@@ -1,7 +1,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const XLSX = require('../vendor/xlsx.full.min.js');
-const { decodeBytes, detectSeparator, parseCsv, toCsv, readFile } = require('../src/parse.js');
+const { decodeBytes, detectSeparator, parseCsv, toCsv, readFile } = require('../src/core/parse.js');
 
 test('decodes UTF-8 with or without BOM', () => {
   const utf8 = new TextEncoder().encode('Name\nMÜLLER');

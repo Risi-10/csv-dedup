@@ -1,6 +1,6 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { normalizePhone } = require('../src/phones.js');
+const { normalizePhone } = require('../src/core/phones.js');
 
 // Most examples are from the project brief, which uses US numbers.
 const value = (raw, country = '1') => normalizePhone(raw, country).value;

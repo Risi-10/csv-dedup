@@ -1,8 +1,8 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { combineFiles } = require('../src/combine.js');
-const { cleanList } = require('../src/dedupe.js');
-const { readFile } = require('../src/parse.js');
+const { combineFiles } = require('../src/core/combine.js');
+const { cleanList } = require('../src/core/dedupe.js');
+const { readFile } = require('../src/core/parse.js');
 
 const csvFile = (name, text) => ({ name, ...readFile(new TextEncoder().encode(text).buffer, name) });
 

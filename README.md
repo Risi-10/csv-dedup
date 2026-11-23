@@ -36,19 +36,19 @@ npm run build   # writes dist/list-cleaner.html, the single file to hand over
 npm test        # unit tests + end-to-end test on samples/ (the sample uses US numbers, so it runs with country code 1)
 ```
 
-During development you can also open `src/index.html` directly; it loads the same scripts unbundled.
+During development you can also open `src/web/index.html` directly; it loads the same scripts unbundled.
 
 ## How it works
 
 | File | Job |
 |---|---|
-| `src/parse.js` | Reads CSV (detects UTF-8 vs Windows-1252 and `,` / `;` / tab) and Excel files |
-| `src/columns.js` | Finds columns by header name in Albanian, English and German (name, phone, email, ID, plus city, address, country, postal code, birthday, notes) and names them for the download |
-| `src/combine.js` | Joins several files into one table, lining up columns by role or header, and remembers each row's file and row number |
-| `src/names.js` | Fixes capitals word by word; leaves already mixed-case words like `McDonald` alone |
-| `src/phones.js` | Converts phones to `+<country><number>`; default country code is `355`, Albania (`DEFAULT_COUNTRY_CODE`). Albanian and Kosovo numbers with a digit missing or extra are flagged |
-| `src/dedupe.js` | Groups duplicates, merges them and builds the "rows to check" list and summary |
-| `src/app.js` | Page wiring: drop zone, previews, downloads |
+| `src/core/parse.js` | Reads CSV (detects UTF-8 vs Windows-1252 and `,` / `;` / tab) and Excel files |
+| `src/core/columns.js` | Finds columns by header name in Albanian, English and German (name, phone, email, ID, plus city, address, country, postal code, birthday, notes) and names them for the download |
+| `src/core/combine.js` | Joins several files into one table, lining up columns by role or header, and remembers each row's file and row number |
+| `src/core/names.js` | Fixes capitals word by word; leaves already mixed-case words like `McDonald` alone |
+| `src/core/phones.js` | Converts phones to `+<country><number>`; default country code is `355`, Albania (`DEFAULT_COUNTRY_CODE`). Albanian and Kosovo numbers with a digit missing or extra are flagged |
+| `src/core/dedupe.js` | Groups duplicates, merges them and builds the "rows to check" list and summary |
+| `src/web/app.js` | Page wiring: drop zone, previews, downloads (with `index.html` and `styles.css`) |
 | `vendor/xlsx.full.min.js` | [SheetJS](https://sheetjs.com/) Community Edition **0.20.3**, from `cdn.sheetjs.com` (the npm registry copy is outdated) |
 
 **Duplicate rules**

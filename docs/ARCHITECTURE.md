@@ -3,8 +3,8 @@
 How the list cleaner works today, and the plan for growing it into an app with a backend and a
 database without throwing away what already works.
 
-Status: **plan only, nothing built yet** (agreed 2026-11-20). This describes the code once the open
-pull requests #3, #4 and #2 are merged. Each phase below becomes its own branch and pull request.
+Status: **phase 0 done** (2026-11-23); later phases are plans (agreed 2026-11-20). Each phase below
+becomes its own branch and pull request.
 
 ---
 
@@ -18,8 +18,8 @@ pull requests #3, #4 and #2 are merged. Each phase below becomes its own branch 
 
 | Part | Files | Runs in |
 |---|---|---|
-| **Cleaning logic** | `src/names.js`, `phones.js`, `columns.js`, `combine.js`, `dedupe.js`, `parse.js` | Browser **and** Node |
-| **Page** | `src/app.js`, `index.html`, `styles.css` | Browser only |
+| **Cleaning logic** | `src/core/`: `names.js`, `phones.js`, `columns.js`, `combine.js`, `dedupe.js`, `parse.js` | Browser **and** Node |
+| **Page** | `src/web/`: `app.js`, `index.html`, `styles.css` | Browser only |
 
 The cleaning files have no browser code. Each one exports through `module.exports` in Node and
 `window.Cleaner` in the browser, which is how the tests already run them in Node. `parse.js`'s
